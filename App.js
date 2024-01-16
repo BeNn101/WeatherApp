@@ -10,7 +10,7 @@ import * as Location from 'expo-location';
 export default function App() {
   const [location, setLocation] = useState({ lat: null, lon: null });
   const [weatherData, setWeatherData] = useState(null);
-  // const [forecastData, setForecastData] = useState(null);
+  const [forecastData, setForecastData] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -31,6 +31,7 @@ export default function App() {
       } catch (error) {
         console.error('Error getting location:', error);
       }
+        
     })();
   }, []);
   function fetchWeather(lat, lon) {
