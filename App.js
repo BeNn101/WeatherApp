@@ -1,21 +1,28 @@
 import { StatusBar } from 'expo-status-bar';
-import { ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { ImageBackground, StyleSheet, Text, View , ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { Image } from 'react-native';
 import * as Location from 'expo-location';
 import { ScrollView } from 'react-native';
+import { styles } from './styles';
+
 
 
 export default function App() {
   const [location, setLocation] = useState({ lat: null, lon: null });
   const [weatherData, setWeatherData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
+
+        setLoading(true);
+
+        
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           console.warn('Permission to access location was denied');
@@ -32,6 +39,8 @@ export default function App() {
         fetchForecast(location.coords.latitude, location.coords.longitude);
       } catch (error) {
         console.error('Error getting location:', error);
+      }finally {
+        setLoading(false); 
       }
         
     })();
@@ -76,174 +85,77 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-       
+    <View style={[styles.container]}>
+      {loading ? (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="black" />
+        <Text style={styles.loadingText}>En cours de chargement , patientez</Text>
+      </View>
+    ) : (
+      <>
       <ImageBackground
         source={require('./img/picture.png')}
-        style={styles.backgroundImage}
-      >
-        
+        style={styles.backgroundImage}        
+      >        
         <View style={styles.overlay}>
-        <Text style={styles.title}>App Météo </Text>
+          <Text style={styles.title}>App Météo </Text>
         </View>
-        {weatherData && (
-          <View style={styles.weatherInfo}>
-            <Text style={styles.city}>{weatherData.name}</Text>
-            <Text style={styles.temp}>{weatherData.main.temp}°C</Text>
-            <Text style={styles.weather}>
-              {weatherData.weather[0].description.charAt(0).toUpperCase() +
-                weatherData.weather[0].description.slice(1)}
-            </Text>
-            {weatherData.weather[0].icon && (
-              <Image
-                style={{ width: 50, height: 50 }} 
-                source={{ uri: `http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png` }}
-              />
+        
+            {weatherData && (
+              <View style={styles.weatherInfo}>
+                <Text style={styles.city}>{weatherData.name}</Text>
+                <Text style={styles.temp}>{weatherData.main.temp}°C</Text>
+                <Text style={styles.weather}>
+                  {weatherData.weather[0].description.charAt(0).toUpperCase() +
+                    weatherData.weather[0].description.slice(1)}
+                </Text>
+                {weatherData.weather[0].icon && (
+                  <Image
+                    style={{ width: 50, height: 50 }}
+                    source={{ uri: `http://openweathermap.org/img/wn/${weatherData.weather[0].icon}.png` }}
+                  />
+                )}
+              </View>
             )}
-          </View>
-        )}
-      <View style={styles.forecastSection}>
-        <Text style={styles.forecastTitle}>Prévisions</Text>
-      </View>
-
-      {forecastData && (
-  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-    <View style={styles.forecastCardSection}>
-      {forecastData.map((forecast, index) => {
-        const { formattedDate, formattedTime } = formatForecastDate(forecast.dt_txt);
-
-        return (
-          <View key={index} style={styles.forecastCard}>
-            <Text style={styles.forecastDate}>{formattedDate}</Text>
-            <Text style={styles.forecastTime}>{formattedTime}</Text>
-            <Text style={styles.forecastTemp}>{Math.floor(forecast.main.temp)}°C</Text>
-            <Text style={{ fontSize: 15 , fontWeight : 'bold'}}>
-              {forecast.weather[0].main.charAt(0).toUpperCase() +
-                forecast.weather[0].main.slice(1)}
-            </Text>
-            <Image
-              style={{ width: 50, height: 50 }}
-              source={{
-                uri: `http://openweathermap.org/img/wn/${forecast.weather[0].icon}.png`,
-              }}
-            />
-          </View>
-        );
-      })}
-    </View>
-  </ScrollView>
-)}
-      
+            <View style={styles.forecastSection}>
+              <Text style={styles.forecastTitle}>Prévisions</Text>
+            </View>
+            {forecastData && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.forecastCardSection}>
+                  {forecastData.map((forecast, index) => {
+                    const { formattedDate, formattedTime } = formatForecastDate(forecast.dt_txt);
+  
+                    return (
+                      <View key={index} style={styles.forecastCard}>
+                        <Text style={styles.forecastDate}>{formattedDate}</Text>
+                        <Text style={styles.forecastTime}>{formattedTime}</Text>
+                        <Text style={styles.forecastTemp}>{Math.floor(forecast.main.temp)}°C</Text>
+                        <Text style={{ fontSize: 15, fontWeight: 'bold' }}>
+                          {forecast.weather[0].main.charAt(0).toUpperCase() +
+                            forecast.weather[0].main.slice(1)}
+                        </Text>
+                        <Image
+                          style={{ width: 50, height: 50 }}
+                          source={{
+                            uri: `http://openweathermap.org/img/wn/${forecast.weather[0].icon}.png`,
+                          }}
+                        />
+                      </View>
+                      
+                    );
+                  })}
+                </View>
+                
+              </ScrollView>
+            )}
+          
+        
       </ImageBackground>
-      
+      </>
+      )}
     </View>
   );
+  
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  overlay: {    
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    alignItems : 'center',   
-    justifyContent : 'center',
-    paddingTop: 32,
-    color: 'white', 
-  },
-  weatherInfo: {
-    backgroundColor : 'rgba(128, 128, 128, 0.5)',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center', 
-    margin : 16,
-    shadowColor: '#171717',
-    shadowOffset: {width: -2, height: 4},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    marginBottom : 20,
-  },
-  city: {
-    fontSize : 33,
-    fontWeight : 'bold',
-    paddingBottom : 12
-  },
-  temp : {
-    fontSize : 25,
-    color : 'blue',
-    borderColor : 'black',
-    paddingBottom : 10,
-  },
-  weather : {
-    fontSize : 20,
-    shadowColor : 'black',
-    color : 'white',
-    shadowColor : '#111111',
-    shadowOffset: {width: -2, height: 4},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-
-  },
-  forecastSection: {
-    backgroundColor: 'rgba(128, 128, 128, 0.5)',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    margin: 16,
-    shadowColor: 'white',
-    shadowOffset: { width: -2, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 3,
-  
-  },
-  forecastTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  forecastDate: {
-    fontSize : 20,
-    fontWeight : 'bold',
-    marginBottom : 6
-  },
-  forecastTime: {
-    fontSize : 17,
-    marginBottom : 6,
-  },
-  forecastTemp : {
-    fontSize : 23,
-    color : 'grey',
-    marginBottom : 10,
-  },
-  
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  forecastCardSection: {
-    flexDirection: 'row',     
-    borderRadius: 8,
-    marginBottom : 30 
-  },
-  forecastCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 8,
-    padding: 27,
-    margin: 10,
-    alignItems: 'center',
-    height: 200,  
-  },
-  
-});
-
- 
